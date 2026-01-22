@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Personal Hub 2026</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #d946ef;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: #1e293b;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 25px;
+            border-radius: 18px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+
+        h2 { margin-top: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); }
+
+        .form-group { margin-bottom: 15px; }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        .btn {
+            cursor: pointer;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .btn-add { background: var(--primary); color: white; }
+        .btn-wa { background: #25d366; color: white; }
+        .btn-call { background: var(--success); color: white; }
+        .btn-del { background: #fee2e2; color: var(--danger); width: auto; padding: 5px 10px; }
+        
+        /* അലാറം അടിക്കുമ്പോൾ കാണിക്കുന്ന സ്റ്റൈൽ */
+        #alarm-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(239, 68, 68, 0.95);
+            color: white;
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border-left: 4px solid var(--primary);
+        }
+
+        /* മുകളിൽ കാണിക്കുന്ന മുന്നറിയിപ്പ് */
+        #interaction-banner {
+            background: #fef3c7;
+            padding: 10px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #f59e0b;
+        }
+    </style>
+</head>
+<body>
+
+<div id="alarm-overlay">
+    <h1 style="font-size: 3rem;">⏰ ALARM!</h1>
+    <h2 id="active-alarm-text" style="color: white;"></h2>
+    <button class="btn" onclick="stopAlarm()" style="width: 200px; background: white; color: red; font-size: 1.5rem;">STOP</button>
+</div>
+
+<div class="container">
+    <div id="interaction-banner">
+        അലാറം സിസ്റ്റം ശരിയായി പ്രവർത്തിക്കാൻ ഇവിടെ ക്ലിക്ക് ചെയ്യുക: 
+        <button onclick="enableAudio()" style="padding: 5px 10px; cursor: pointer;">Enable Alarm Sound</button>
+    </div>
+
+    <div class="header">
+        <h1 id="clock">00:00:00</h1>
+        <p id="date-display"></p>
+    </div>
+
+    <div class="grid">
+        <div class="card" style="border-top: 5px solid var(--warning)">
+            <h2>⏰ Alarms &amp; Reminders</h2>
+            <div class="form-group">
+                <input type="text" id="alarm-text" placeholder="എന്തിനുള്ള അലാറം ആണ്?">
+                <input type="datetime-local" id="alarm-time" style="margin-top:5px">
+                <button class="btn btn-add" onclick="addAlarm()" style="margin-top:10px; background: var(--warning)">Set Alarm</button>
+            </div>
+            <div id="alarm-list"></div>
+        </div>
+
+        <div class="card">
+            <h2>📝 Tasks</h2>
+            <div class="form-group">
+                <input type="text" id="todo-input" placeholder="എന്ത് ചെയ്യണം?">
+                <button class="btn btn-add" onclick="addItem('todos')" style="margin-top:10px">Add Task</button>
+            </div>
+            <div id="todo-list"></div>
+        </div>
+
+        <div class="card" style="border-top: 5px solid var(--success)">
+            <h2>📞 Contacts</h2>
+            <div class="form-group">
+                <input type="text" id="contact-name" placeholder="പേര്">
+                <input type="tel" id="contact-phone" placeholder="ഫോൺ നമ്പർ">
+                <button class="btn btn-add" onclick="addItem('contacts')" style="margin-top:10px; background: var(--success)">Save Contact</button>
+            </div>
+            <div id="contact-list"></div>
+        </div>
+
+        <div class="card" style="border-top: 5px solid #25d366">
+            <h2>💬 WhatsApp Scheduler</h2>
+            <div class="form-group">
+                <input type="tel" id="wa-phone" placeholder="Country code സഹിതം നമ്പർ">
+                <textarea id="wa-msg" placeholder="സന്ദേശം..." rows="2" style="margin-top:5px"></textarea>
+                <input type="datetime-local" id="wa-time" style="margin-top:5px">
+                <button class="btn btn-wa" onclick="addWASchedule()" style="margin-top:10px">Schedule WhatsApp</button>
+            </div>
+            <div id="wa-list"></div>
+        </div>
+    </div>
+</div>
+
+<audio id="alarm-sound" loop>
+    <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
+</audio>
+
+<script>
+    let audioContextEnabled = false;
+    const alarmAudio = document.getElementById('alarm-sound');
+
+    function enableAudio() {
+        audioContextEnabled = true;
+        document.getElementById('interaction-banner').style.display = 'none';
+        // ശബ്ദം പ്ലേ ചെയ്യാൻ അനുമതി നേടുന്നു
+        alarmAudio.play().then(() => {
+            alarmAudio.pause();
+            alarmAudio.currentTime = 0;
+        }).catch(e => console.log("Audio ready"));
+    }
+
+    let appData = JSON.parse(localStorage.getItem('hub_v2_data')) || {
+        todos: [],
+        alarms: [],
+        contacts: [],
+        waSchedules: []
+    };
+
+    function save() {
+        localStorage.setItem('hub_v2_data', JSON.stringify(appData));
+        render();
+    }
+
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('clock').innerText = now.toLocaleTimeString();
+        document.getElementById('date-display').innerText = now.toDateString();
+        checkTriggers(now);
+    }
+    setInterval(updateClock, 1000);
+
+    function checkTriggers(now) {
+        appData.alarms.forEach((alarm) => {
+            if (!alarm.done && new Date(alarm.time) <= now) {
+                alarm.done = true;
+                startAlarm(alarm.text);
+                save();
+            }
+        });
+
+        appData.waSchedules.forEach((wa) => {
+            if (!wa.done && new Date(wa.time) <= now) {
+                wa.done = true;
+                window.open(`https://wa.me/${wa.phone}?text=${encodeURIComponent(wa.msg)}`, '_blank');
+                save();
+            }
+        });
+    }
+
+    function startAlarm(msg) {
+        document.getElementById('active-alarm-text').innerText = msg;
+        document.getElementById('alarm-overlay').style.display = 'flex';
+        
+        // ശബ്ദവും വൈബ്രേഷനും പ്രവർത്തിപ്പിക്കുന്നു
+        alarmAudio.play();
+        if (navigator.vibrate) {
+            navigator.vibrate([500, 200, 500, 200, 500]);
+        }
+    }
+
+    function stopAlarm() {
+        alarmAudio.pause();
+        alarmAudio.currentTime = 0;
+        document.getElementById('alarm-overlay').style.display = 'none';
+        if (navigator.vibrate) navigator.vibrate(0);
+    }
+
+    function addAlarm() {
+        const text = document.getElementById('alarm-text').value;
+        const time = document.getElementById('alarm-time').value;
+        if(text && time) {
+            appData.alarms.push({ text, time, done: false, id: Date.now() });
+            save();
+            alert("അലാറം സെറ്റ് ചെയ്തിട്ടുണ്ട്!");
+        }
+    }
+
+    function addItem(type) {
+        if (type === 'todos') {
+            const val = document.getElementById('todo-input').value;
+            if(val) appData.todos.push({ text: val, id: Date.now() });
+            document.getElementById('todo-input').value = '';
+        } 
+        else if (type === 'contacts') {
+            const name = document.getElementById('contact-name').value;
+            const phone = document.getElementById('contact-phone').value;
+            if(name && phone) appData.contacts.push({ name, phone, id: Date.now() });
+            document.getElementById('contact-name').value = '';
+            document.getElementById('contact-phone').value = '';
+        }
+        save();
+    }
+
+    function addWASchedule() {
+        const phone = document.getElementById('wa-phone').value;
+        const msg = document.getElementById('wa-msg').value;
+        const time = document.getElementById('wa-time').value;
+        if(phone && msg && time) {
+            appData.waSchedules.push({ phone, msg, time, done: false, id: Date.now() });
+            save();
+        }
+    }
+
+    function deleteItem(type, id) {
+        appData[type] = appData[type].filter(item => item.id !== id);
+        save();
+    }
+
+    function render() {
+        document.getElementById('todo-list').innerHTML = appData.todos.map(t => `
+            <div class="list-item">
+                <span>${t.text}</span>
+                <button class="btn-del" onclick="deleteItem('todos', ${t.id})">✕</button>
+            </div>
+        `).join('');
+
+        document.getElementById('alarm-list').innerHTML = appData.alarms.map(a => `
+            <div class="list-item" style="border-left-color: var(--warning)">
+                <div>
+                    <div><strong>${a.text}</strong></div>
+                    <small>${new Date(a.time).toLocaleString()}</small>
+                </div>
+                <div>
+                    ${a.done ? '<span style="color:green">Done</span>' : ''}
+                    <button class="btn-del" onclick="deleteItem('alarms', ${a.id})">✕</button>
+                </div>
+            </div>
+        `).join('');
+
+        document.getElementById('contact-list').innerHTML = appData.contacts.map(c => `
+            <div class="list-item" style="border-left-color: var(--success)">
+                <div><strong>${c.name}</strong></div>
+                <button class="btn btn-call" style="width:auto; padding:5px 10px" onclick="window.open('tel:${c.phone}')">📞 Call</button>
+                <button class="btn-del" onclick="deleteItem('contacts', ${c.id})">✕</button>
+            </div>
+        `).join('');
+
+        document.getElementById('wa-list').innerHTML = appData.waSchedules.map(w => `
+            <div class="list-item" style="border-left-color: #25d366">
+                <div>
+                    <div><strong>To: ${w.phone}</strong></div>
+                    <small>${new Date(w.time).toLocaleString()}</small>
+                </div>
+                <button class="btn-del" onclick="deleteItem('waSchedules', ${w.id})">✕</button>
+            </div>
+        `).join('');
+    }
+
+    render();
+</script>
+
+</body></html>
